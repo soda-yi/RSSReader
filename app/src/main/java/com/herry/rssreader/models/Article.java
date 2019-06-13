@@ -56,7 +56,7 @@ public class Article {
         return description;
     }
 
-    public long getPublished() {
+    public Long getPublished() {
         return published;
     }
 

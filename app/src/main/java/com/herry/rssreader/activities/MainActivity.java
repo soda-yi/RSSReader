@@ -22,6 +22,7 @@ import android.widget.Toast;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import com.herry.rssreader.dao.ArticleDao;
 import com.herry.rssreader.dao.DbContext;
 import com.herry.rssreader.models.Article;
 import com.herry.rssreader.models.Channel;
+import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
@@ -157,10 +159,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void addChannel(String link) {
         String urlString;
-        if (link.startsWith("https://")) {
+        if (link.startsWith("http://")) {
             urlString = link;
-        } else if (link.startsWith("http://")) {
-            urlString = link.replace("http", "https");
+        } else if (link.startsWith("https://")) {
+            urlString = link;//.replace("https", "http");
         } else {
             urlString = "https://" + link;
         }
@@ -174,7 +176,8 @@ public class MainActivity extends AppCompatActivity {
             String channelTitle = feed.getTitle();
             String siteUrl = feed.getLink();
             String channelDesc = feed.getDescription();
-            Long channelTime = feed.getPublishedDate().getTime();
+            Date channelDate = feed.getPublishedDate();
+            Long channelTime = channelDate == null ? null : channelDate.getTime();
             Channel channel = new Channel(null, "feed/" + urlString, channelTitle, urlString, channelTime, siteUrl, channelDesc);
             channels.add(channel);
             DbContext.getChannelDao().insert(channel);
@@ -185,8 +188,10 @@ public class MainActivity extends AppCompatActivity {
                 SyndEntry entry = (SyndEntry) entries.get(j);
                 String articleTitle = entry.getTitle();
                 String articleLink = entry.getLink();
-                String articleDesc = entry.getDescription().getValue();
-                long articlePublished = entry.getPublishedDate().getTime();
+                SyndContent desc = entry.getDescription();
+                Date articleDate = entry.getPublishedDate();
+                String articleDesc = desc.getValue();
+                Long articlePublished = articleDate == null ? null : articleDate.getTime();
                 newArticles.add(new Article(null, articleTitle, articleLink, articleDesc, false, false, null, channel.getId(), articlePublished));
             }
             DbContext.getArticleDao().insertInTx(newArticles);
@@ -197,11 +202,11 @@ public class MainActivity extends AppCompatActivity {
                     channelAdapter.notifyChannelAdded();
                 }
             });
-        } catch (FeedException|IllegalArgumentException|UnknownHostException e) {
+        } catch (FeedException | IllegalArgumentException | UnknownHostException e) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(MainActivity.this,"订阅源输入有误",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "订阅源输入有误", Toast.LENGTH_SHORT).show();
                 }
             });
         } catch (Exception e) {
@@ -229,8 +234,10 @@ public class MainActivity extends AppCompatActivity {
                 SyndEntry entry = (SyndEntry) entries.get(j);
                 String articleTitle = entry.getTitle();
                 String articleLink = entry.getLink();
-                String articleDesc = entry.getDescription().getValue();
-                long articlePublished = entry.getPublishedDate().getTime();
+                SyndContent desc = entry.getDescription();
+                Date articleDate = entry.getPublishedDate();
+                String articleDesc = desc.getValue();
+                Long articlePublished = articleDate == null ? null : articleDate.getTime();
                 responseArticles.add(new Article(null, articleTitle, articleLink, articleDesc, false, false, null, channel.getId(), articlePublished));
             }
             List<Article> originArticles = DbContext.getArticleDao().queryBuilder().where(
